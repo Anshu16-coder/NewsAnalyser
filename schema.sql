@@ -8,7 +8,9 @@
 
 CREATE TABLE IF NOT EXISTS articles (
     id              BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    link            VARCHAR(512)    NOT NULL,
+    -- Google News RSS hands back redirect URLs up to ~800 chars, so this is
+    -- sized for those rather than the ~190-char NDTV ones.
+    link            VARCHAR(1024)   NOT NULL,
     headline        VARCHAR(512)    NOT NULL,
     content         TEXT,
     category        VARCHAR(32)     NOT NULL,
@@ -21,6 +23,8 @@ CREATE TABLE IF NOT EXISTS articles (
     analysis_result ENUM('Positive', 'Negative', 'Neutral') NOT NULL DEFAULT 'Neutral',
     PRIMARY KEY (id),
     -- Scraper runs many times a day; this is what makes re-runs idempotent.
+    -- MySQL caps a utf8mb4 index key at 3072 bytes = 768 chars, so this stays
+    -- within range. Past that the fix is a hash column, not a wider VARCHAR.
     UNIQUE KEY uq_articles_link (link),
     KEY idx_articles_category_published (category, published_on),
     KEY idx_articles_published_on (published_on),
