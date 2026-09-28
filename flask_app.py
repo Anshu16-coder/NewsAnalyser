@@ -61,22 +61,18 @@ def fetch_articles(category=None):
         "general", "cricket", "world", "health",
         "education", "science", "entertainment",
     }
+    columns = """
+        SELECT link, headline, datetime_posted, content, category, analysis_result
+    """
+    order = " ORDER BY COALESCE(published_at, scraped_at) DESC, id DESC"
+
     if category is None:
-        sql = """
-            SELECT link, headline, datetime_posted, content, category, analysis_result
-            FROM articles
-            ORDER BY COALESCE(published_at, scraped_at) DESC, id DESC
-        """
+        sql = columns + " FROM articles" + order
         params = ()
     else:
         if category not in allowed:
             raise ValueError(f"Unknown category: {category}")
-        sql = """
-            SELECT link, headline, datetime_posted, content, category, analysis_result
-            FROM articles
-            WHERE category = %s
-            ORDER BY COALESCE(published_at, scraped_at) DESC, id DESC
-        """
+        sql = columns + " FROM articles WHERE category = %s" + order
         params = (category,)
 
     with get_connection() as connection:

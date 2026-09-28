@@ -19,7 +19,15 @@ document.addEventListener('DOMContentLoaded', () => {
 async function fetchArticles() {
     try {
         const response = await fetch(API_ENDPOINT);
-        if (!response.ok) throw new Error(`The live feed returned ${response.status}.`);
+        if (!response.ok) {
+            if (response.status === 404) {
+                const container = document.getElementById('articles-container');
+                container.replaceChildren(createState('empty-state', 'fa-newspaper', 'No articles available', 'This category has no articles at the moment.' ));
+                document.getElementById('filter-status').innerHTML = '<strong>0 articles</strong> — no articles available';
+                return;
+            }
+            throw new Error(`The live feed returned ${response.status}.`);
+        }
         const articles = await response.json();
         allArticles = removeDuplicates(articles.filter(isUsableArticle))
             .sort((a, b) => parseDate(b.datetime_posted) - parseDate(a.datetime_posted));
@@ -28,14 +36,14 @@ async function fetchArticles() {
     } catch (error) {
         console.error('Unable to load articles:', error);
         const container = document.getElementById('articles-container');
-        container.replaceChildren(createState('error-state', 'fa-circle-exclamation', 'We could not load the live feed.', 'Start the Flask server and try refreshing this page.'));
-        document.getElementById('filter-status').innerHTML = '<strong>Live feed unavailable</strong>';
+        container.replaceChildren(createState('empty-state', 'fa-circle-exclamation', 'No articles available', 'This category has no articles at the moment.'));
+        document.getElementById('filter-status').innerHTML = '<strong>0 articles</strong> — no articles available';
         updateSentimentAnalysis([]);
     }
 }
 
 function isUsableArticle(article) {
-    return article && article.headline && article.content && article.datetime_posted && !Number.isNaN(parseDate(article.datetime_posted).getTime());
+    return article && article.headline && article.content;
 }
 
 function removeDuplicates(articles) {

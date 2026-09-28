@@ -267,12 +267,14 @@ def scrape_category(category: str) -> list:
 
 _INSERT_SQL = """
     INSERT INTO articles
-        (link, headline, content, category, published_at, published_on, scraped_at, analysis_result)
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        (link, headline, content, category, published_at, published_on,
+         datetime_posted, scraped_at, analysis_result)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
     ON DUPLICATE KEY UPDATE
         -- Refresh the derived columns on re-scrape; headline/content stay as first seen.
         published_at    = COALESCE(VALUES(published_at), published_at),
         published_on    = COALESCE(VALUES(published_on), published_on),
+        datetime_posted = COALESCE(NULLIF(VALUES(datetime_posted), ''), datetime_posted),
         analysis_result = VALUES(analysis_result)
 """
 
@@ -307,6 +309,7 @@ def store_articles(connection, category: str, articles: list) -> tuple:
             category,
             published_at,
             published_at.date() if published_at else None,
+            article.get("datetime_posted") or "",
             scraped_at,
             get_sentiment(article.get("content") or article["headline"]),
         ))

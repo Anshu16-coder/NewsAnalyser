@@ -19,6 +19,10 @@ CREATE TABLE IF NOT EXISTS articles (
     -- Date-only projection of published_at, so the trends query is a plain
     -- GROUP BY instead of re-parsing a display string on every request.
     published_on    DATE            NULL,
+    -- Same instant as published_at, pre-formatted as "September 28, 2026
+    -- 11:04 PM" because that is the string the frontend's date parser expects.
+    -- published_at remains the typed source of truth.
+    datetime_posted VARCHAR(32)     NOT NULL DEFAULT '',
     scraped_at      DATETIME        NOT NULL,
     analysis_result ENUM('Positive', 'Negative', 'Neutral') NOT NULL DEFAULT 'Neutral',
     PRIMARY KEY (id),
