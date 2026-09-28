@@ -4,7 +4,7 @@ Live NDTV headlines with article-level sentiment analysis, visualised with Chart
 
 Seven categories — general, cricket, world, health, education, science, entertainment —
 scraped from RSS feeds, classified **Positive / Negative / Neutral** with TextBlob, and
-served from MySQL. The scraper runs on a schedule in GitHub Actions; the site is a
+served from Neon Postgres. The scraper runs on a schedule in GitHub Actions; the site is a
 read-only Flask API deployed on Vercel.
 
 ---
@@ -15,7 +15,7 @@ read-only Flask API deployed on Vercel.
 NDTV RSS feeds
       │
       ▼
-  scraper.py ──────────► MySQL (articles table)
+  scraper.py ──────────► Neon Postgres (articles table)
    (GitHub Actions,        ▲
     daily 04:17 UTC)       │
                            │
@@ -23,14 +23,14 @@ NDTV RSS feeds
                        (Vercel)                index · category pages · trends
 ```
 
-The two halves never import each other. They share only `db.py` and the `DB_*` env vars,
+The two halves never import each other. They share only `db.py` and the `DATABASE_URL` env var,
 so neither can drift from the schema the other expects.
 
 | Piece | Runs on | Does |
 |---|---|---|
-| `scraper.py` | GitHub Actions, daily | Fetches 7 RSS feeds → keyword-filters → TextBlob sentiment → upserts to MySQL |
+| `scraper.py` | GitHub Actions, daily | Fetches 7 RSS feeds → keyword-filters → TextBlob sentiment → upserts to Postgres |
 | `flask_app.py` | Vercel | Serves the static site and a read-only JSON API. No scraping. |
-| `db.py` | both | Single place that reads the database env vars |
+| `db.py` | both | Single place that reads the database env var |
 | `schema.sql` | both | The `articles` table; applied automatically on every scraper run |
 
 ---
@@ -40,7 +40,7 @@ so neither can drift from the schema the other expects.
 ```
 scraper.py            Single-file scraper — feeds, filtering, sentiment, DB write
 flask_app.py          Flask API + static file server
-db.py                 MySQL connection from env vars
+db.py                 Postgres connection from env var
 schema.sql            articles table definition
 index.html            Home — today's pulse + category grid
 trends.html           Sentiment-over-time line chart + data table
@@ -53,19 +53,13 @@ general.html …        One page per category (7 total)
 
 ## Environment variables
 
-Used by **both** the scraper and the web app. `DB_URL` (sqlalchemy-style) is also
-accepted and takes precedence if you prefer a single variable.
+Used by **both** the scraper and the web app.
 
 | Variable | Example | Notes |
 |---|---|---|
-| `DB_HOST` | `mysql.railway.app` | |
-| `DB_PORT` | `3306` | Optional, defaults to 3306 |
-| `DB_USER` | `root` | |
-| `DB_PASSWORD` | `••••••••` | |
-| `DB_NAME` | `newsanalyser` | |
-| `DB_SSL` | `1` | Set for any hosted provider that requires TLS |
+| `DATABASE_URL` | `postgresql://USER:PASSWORD@HOST/neondb?sslmode=require` | Use the *pooled* host (ends in `-pooler`) for the app and the scraper |
 
-Locally, put these in a `.env` file (git-ignored) and `pip install python-dotenv`.
+Locally, put this in a `.env` file (git-ignored) and `pip install python-dotenv`.
 
 ---
 
@@ -73,9 +67,7 @@ Locally, put these in a `.env` file (git-ignored) and `pip install python-dotenv
 
 ### 1. Database
 
-Create an empty MySQL database (Railway, PlanetScale, Aiven, Neon…) and note the
-credentials. You do **not** need to run `schema.sql` by hand — `scraper.py` applies it
-on every run, so the table appears on the first scrape.
+Create a Neon Postgres database and note the connection string from the Neon console (Connect → Connection string). You do **not** need to run `schema.sql` by hand — `scraper.py` applies it on every run, so the table appears on the first scrape.
 
 ### 2. Run the scraper once, locally
 
@@ -112,12 +104,7 @@ Open <http://127.0.0.1:5000>. The pages and API share one origin, so relative
 `.github/workflows/scrape.yml` runs `python scraper.py` daily at 04:17 UTC, and can
 also be triggered by hand with **Run workflow** in the Actions tab.
 
-Add the `DB_*` values as repository secrets under
-**Settings → Secrets and variables → Actions**:
-
-```
-DB_HOST · DB_PORT · DB_USER · DB_PASSWORD · DB_NAME · DB_SSL
-```
+Add `DATABASE_URL` as a repository secret under **Settings → Secrets and variables → Actions**.
 
 Each run is idempotent — `articles.link` is `UNIQUE`, so re-running only inserts
 genuinely new articles. The `concurrency` group stops two scrapes overlapping, and the
@@ -126,8 +113,7 @@ console output is uploaded as a log artifact.
 ### Vercel (the site)
 
 The app is a standard Flask app; point Vercel at `flask_app.py` with a WSGI entry, or
-use a small `vercel.json` that runs `gunicorn flask_app:app`. Set the same six `DB_*`
-values under **Project → Settings → Environment Variables**.
+use a small `vercel.json` that runs `gunicorn flask_app:app`. Set `DATABASE_URL` under **Project → Settings → Environment Variables**.
 
 The API is read-only, so the site is safe to scale — all writing happens in CI.
 
@@ -161,7 +147,7 @@ Every article row is:
 ```
 
 `datetime_posted` keeps the original display format so the frontend's date parser is
-unchanged; the DB also stores a real `published_at` DATETIME and a `published_on` DATE
+unchanged; the DB also stores a real `published_at` TIMESTAMP (`TIMESTAMP WITH TIME ZONE`) and a `published_on` DATE
 that the trends endpoint groups on.
 
 ---
@@ -169,7 +155,7 @@ that the trends endpoint groups on.
 ## Tech stack
 
 **Scraping** RSS via `requests` + `xml.etree` · **Sentiment** TextBlob ·
-**Database** MySQL via `pymysql` · **API** Flask · **Frontend** vanilla HTML/CSS/JS +
+**Database** Postgres (Neon) via `psycopg2` · **API** Flask · **Frontend** vanilla HTML/CSS/JS +
 Chart.js · **Scheduler** GitHub Actions
 
 ---

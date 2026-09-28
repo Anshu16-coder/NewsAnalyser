@@ -1,4 +1,4 @@
-"""scraper.py — scrape NDTV, analyse sentiment, store in MySQL.
+"""scraper.py — scrape NDTV, analyse sentiment, store in Neon Postgres.
 
 Run it directly to do one pass; GitHub Actions runs it daily on a schedule:
 
@@ -269,59 +269,52 @@ _INSERT_SQL = """
     INSERT INTO articles
         (link, headline, content, category, published_at, published_on,
          datetime_posted, scraped_at, analysis_result)
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-    ON DUPLICATE KEY UPDATE
-        -- Refresh the derived columns on re-scrape; headline/content stay as first seen.
-        published_at    = COALESCE(VALUES(published_at), published_at),
-        published_on    = COALESCE(VALUES(published_on), published_on),
-        datetime_posted = COALESCE(NULLIF(VALUES(datetime_posted), ''), datetime_posted),
-        analysis_result = VALUES(analysis_result)
+    VALUES (%(link)s, %(headline)s, %(content)s, %(category)s, %(published_at)s,
+           %(published_on)s, %(datetime_posted)s, %(scraped_at)s, %(analysis_result)s)
+    ON CONFLICT (link) DO UPDATE SET
+        published_at    = COALESCE(EXCLUDED.published_at, articles.published_at),
+        published_on    = COALESCE(EXCLUDED.published_on, articles.published_on),
+        datetime_posted = CASE
+            WHEN NULLIF(EXCLUDED.datetime_posted, '') IS NOT NULL THEN EXCLUDED.datetime_posted
+            ELSE articles.datetime_posted
+        END,
+        analysis_result = EXCLUDED.analysis_result
 """
 
 
 def store_articles(connection, category: str, articles: list) -> tuple:
-    """Insert articles, skipping links already stored.
+    """Upsert articles. Returns (new_count, refreshed_count).
 
-    Returns (new_count, refreshed_count). ON DUPLICATE KEY still backs the
-    write so a concurrent run can't trip the unique key, but the counts are
-    derived from a pre-check because MySQL's rowcount lumps inserts and
-    updates together.
+    Postgres ON CONFLICT gives exact statusmessage counts, so no pre-check SELECT needed.
     """
     if not articles:
         return 0, 0
 
-    links = [article["link"] for article in articles]
-    with connection.cursor() as cursor:
-        cursor.execute(
-            f"SELECT link FROM articles WHERE link IN ({_placeholders(len(links))})",
-            links,
-        )
-        seen = {row["link"] for row in cursor.fetchall()}
-
     scraped_at = dt.now().replace(microsecond=0)
-    rows = []
-    for article in articles:
-        published_at = article.get("published_at")
-        rows.append((
-            article["link"],
-            article["headline"],
-            article.get("content", ""),
-            category,
-            published_at,
-            published_at.date() if published_at else None,
-            article.get("datetime_posted") or "",
-            scraped_at,
-            get_sentiment(article.get("content") or article["headline"]),
-        ))
+    new_count = 0
+    refreshed_count = 0
 
     with connection.cursor() as cursor:
-        cursor.executemany(_INSERT_SQL, rows)
+        for article in articles:
+            published_at = article.get("published_at")
+            cursor.execute(_INSERT_SQL, {
+                "link":            article["link"],
+                "headline":        article["headline"],
+                "content":         article.get("content", ""),
+                "category":        category,
+                "published_at":    published_at,
+                "published_on":    published_at.date() if published_at else None,
+                "datetime_posted": article.get("datetime_posted") or "",
+                "scraped_at":      scraped_at,
+                "analysis_result": get_sentiment(article.get("content") or article["headline"]),
+            })
+            # statusmessage is "INSERT 0 1" for new rows, "INSERT 0 0" (or "UPDATE 0") for conflicts
+            if cursor.rowcount == 1:
+                new_count += 1
+            else:
+                refreshed_count += 1
 
-    return len(links) - len(seen), len(seen)
-
-
-def _placeholders(count: int) -> str:
-    return ", ".join(["%s"] * count)
+    return new_count, refreshed_count
 
 
 # ---------------------------------------------------------------------------
