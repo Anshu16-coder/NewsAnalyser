@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Track live positive, negative, and neutral NDTV sentiment trends over time.">
+    <title>Sentiment Trends | News Analyzer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="section-colored--trends">
+    <header class="site-header">
+        <div class="site-shell">
+            <div class="topbar">
+                <a class="back-btn topbar__link" href="index.html"><i class="fa-solid fa-arrow-left"></i><span>All categories</span></a>
+                <a class="brand" href="index.html" aria-label="News Analyzer home"><span class="brand__mark"><i class="fa-solid fa-newspaper"></i></span><span>NEWS ANALYZER</span></a>
+            </div>
+            <div class="hero hero--compact">
+                <p class="eyebrow"><i class="fa-solid fa-chart-line"></i> Live all-category view</p>
+                <h1>See the tone behind the headlines.</h1>
+                <p class="hero__text">A single time series for positive, negative, and neutral coverage across all live NDTV categories.</p>
+            </div>
+        </div>
+    </header>
+
+    <main class="site-shell overlap">
+        <section class="trend-card" aria-labelledby="trend-heading">
+            <div class="section-heading">
+                <h2 id="trend-heading">News sentiment over time</h2>
+                <p class="trend-card__intro">Each point shows the percentage of articles in a sentiment group for that day. Use the table to inspect the same live data without relying on the chart.</p>
+            </div>
+            <div id="trend-state" class="loading"><div><i class="fa-solid fa-spinner fa-spin"></i><p>Loading trend data…</p></div></div>
+            <div id="trend-content" hidden>
+                <div class="trend-chart-frame"><canvas id="sentiment-trend-chart" aria-label="Line chart of sentiment trends over time" role="img"></canvas></div>
+                <div class="summary-grid" aria-label="Trend summary">
+                    <div class="summary-item"><span class="summary-item__label">Articles analysed</span><span class="summary-item__value" id="total-articles">0</span></div>
+                    <div class="summary-item"><span class="summary-item__label">Positive overall</span><span class="summary-item__value" id="positive-overall">0%</span></div>
+                    <div class="summary-item"><span class="summary-item__label">Negative overall</span><span class="summary-item__value" id="negative-overall">0%</span></div>
+                    <div class="summary-item"><span class="summary-item__label">Neutral overall</span><span class="summary-item__value" id="neutral-overall">0%</span></div>
+                </div>
+                <div class="table-wrap">
+                    <table class="trend-table">
+                        <caption>Daily sentiment data</caption>
+                        <thead><tr><th scope="col">Date</th><th scope="col">Positive</th><th scope="col">Negative</th><th scope="col">Neutral</th><th scope="col">Articles</th></tr></thead>
+                        <tbody id="trend-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer"><div class="site-shell site-footer__inner"><a class="brand" href="index.html"><span class="brand__mark"><i class="fa-solid fa-newspaper"></i></span><span>NEWS ANALYZER</span></a><p>Live NDTV headlines with sentiment analysis.</p></div></footer>
+
+    <script>
+        const API_ENDPOINT = '/api/sentiment-trends';
+        let trendChart;
+
+        document.addEventListener('DOMContentLoaded', loadTrends);
+
+        async function loadTrends() {
+            try {
+                const response = await fetch(API_ENDPOINT);
+                if (!response.ok) throw new Error(`The trends endpoint returned ${response.status}.`);
+                const data = (await response.json()).filter(isValidPoint).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                if (!data.length) throw new Error('No valid trend data is available.');
+                document.getElementById('trend-state').hidden = true;
+                document.getElementById('trend-content').hidden = false;
+                renderTrendChart(data);
+                updateSummary(data);
+                renderTable(data);
+            } catch (error) {
+                console.error('Unable to load trends:', error);
+                const state = document.getElementById('trend-state');
+                state.className = 'error-state';
+                state.innerHTML = '<div><i class="fa-solid fa-circle-exclamation"></i><p><strong>We could not load sentiment trends.</strong><br>Start the Flask server and refresh this page.</p></div>';
+            }
+        }
+
+        function isValidPoint(point) {
+            return point && point.date && Number(point.total_articles) > 0 && ['positive', 'negative', 'neutral'].every(key => Number.isFinite(Number(point[key])));
+        }
+
+        function displayDate(value) {
+            return new Date(value).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        function renderTrendChart(data) {
+            const context = document.getElementById('sentiment-trend-chart').getContext('2d');
+            if (trendChart) trendChart.destroy();
+            trendChart = new Chart(context, {
+                type: 'line',
+                data: {
+                    labels: data.map(point => displayDate(point.date)),
+                    datasets: [
+                        createDataset('Positive', data.map(point => Number(point.positive)), '#059669'),
+                        createDataset('Negative', data.map(point => Number(point.negative)), '#DC2626'),
+                        createDataset('Neutral', data.map(point => Number(point.neutral)), '#6264F5')
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 9, padding: 18, color: '#626780', font: { family: 'Inter, system-ui', size: 12, weight: '600' } } },
+                        tooltip: {
+                            callbacks: {
+                                label: context => `${context.dataset.label}: ${context.parsed.y.toFixed(1)}%`,
+                                footer: items => `Articles: ${data[items[0].dataIndex].total_articles}`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { grid: { color: 'rgba(48, 32, 91, 0.07)' }, ticks: { color: '#626780', maxRotation: 40, minRotation: 40, font: { size: 11 } } },
+                        y: { beginAtZero: true, max: 100, grid: { color: 'rgba(48, 32, 91, 0.09)' }, ticks: { color: '#626780', callback: value => `${value}%` }, title: { display: true, text: 'Share of articles', color: '#626780', font: { weight: '600' } } }
+                    }
+                }
+            });
+        }
+
+        function createDataset(label, values, color) {
+            return { label: `${label} %`, data: values, borderColor: color, backgroundColor: color, borderWidth: 2, tension: 0.25, pointRadius: 3, pointHoverRadius: 6, pointBackgroundColor: '#E8E7F7', pointBorderWidth: 2, fill: false };
+        }
+
+        function updateSummary(data) {
+            const total = data.reduce((sum, point) => sum + Number(point.total_articles), 0);
+            const totals = data.reduce((sum, point) => {
+                const count = Number(point.total_articles);
+                sum.positive += Number(point.positive) * count / 100;
+                sum.negative += Number(point.negative) * count / 100;
+                sum.neutral += Number(point.neutral) * count / 100;
+                return sum;
+            }, { positive: 0, negative: 0, neutral: 0 });
+            document.getElementById('total-articles').textContent = total.toLocaleString();
+            document.getElementById('positive-overall').textContent = `${(totals.positive / total * 100).toFixed(1)}%`;
+            document.getElementById('negative-overall').textContent = `${(totals.negative / total * 100).toFixed(1)}%`;
+            document.getElementById('neutral-overall').textContent = `${(totals.neutral / total * 100).toFixed(1)}%`;
+        }
+
+        function renderTable(data) {
+            const body = document.getElementById('trend-table-body');
+            body.replaceChildren();
+            data.forEach(point => {
+                const row = document.createElement('tr');
+                [displayDate(point.date), `${Number(point.positive).toFixed(1)}%`, `${Number(point.negative).toFixed(1)}%`, `${Number(point.neutral).toFixed(1)}%`, Number(point.total_articles).toLocaleString()].forEach(value => {
+                    const cell = document.createElement('td');
+                    cell.textContent = value;
+                    row.append(cell);
+                });
+                body.append(row);
+            });
+        }
+    </script>
+</body>
+</html>

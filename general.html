@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Live General news with sentiment analysis from NDTV.">
+    <title>General News | News Analyzer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="section-colored" data-endpoint="generalndtv">
+    <header class="site-header">
+        <div class="site-shell">
+            <div class="topbar">
+                <a class="back-btn topbar__link" href="index.html"><i class="fa-solid fa-arrow-left"></i><span>All categories</span></a>
+                <a class="brand" href="index.html" aria-label="News Analyzer home">
+                    <span class="brand__mark"><i class="fa-solid fa-newspaper"></i></span>
+                    <span>NEWS ANALYZER</span>
+                </a>
+            </div>
+            <div class="hero hero--compact">
+                <p class="eyebrow"><i class="fa-solid fa-bolt"></i> Breaking, in 30 seconds</p>
+                <h1>The day's biggest stories — cut down to what actually matters.</h1>
+                <p class="hero__text">Top headlines, breaking updates, and the sentiment behind each one.</p>
+            </div>
+        </div>
+    </header>
+
+    <main class="site-shell overlap">
+        <section class="filter-panel" aria-labelledby="filters-heading">
+            <div class="filter-panel__header" id="filters-heading"><i class="fa-solid fa-sliders"></i> Refine this feed</div>
+            <div class="filter-controls">
+                <div class="filter-group">
+                    <label for="date-filter">Publication date</label>
+                    <select id="date-filter"><option value="all">All dates</option></select>
+                </div>
+                <div class="filter-group">
+                    <label for="sentiment-filter">Sentiment</label>
+                    <select id="sentiment-filter">
+                        <option value="all">All sentiments</option>
+                        <option value="Positive">Positive</option>
+                        <option value="Negative">Negative</option>
+                        <option value="Neutral">Neutral</option>
+                    </select>
+                </div>
+                <button class="button button--secondary" id="reset-filter" type="button"><i class="fa-solid fa-rotate-left"></i> Reset</button>
+            </div>
+        </section>
+
+        <p id="filter-status" class="filter-status" aria-live="polite"><strong>Loading articles…</strong></p>
+
+        <section class="news-layout" aria-label="General news and sentiment analysis">
+            <div id="articles-container" class="article-list" aria-live="polite">
+                <div class="loading"><div><i class="fa-solid fa-spinner fa-spin"></i><p>Loading live articles…</p></div></div>
+            </div>
+            <aside class="analysis-panel" aria-labelledby="analysis-heading">
+                <h2 class="panel-title" id="analysis-heading"><i class="fa-solid fa-chart-pie"></i> Sentiment overview</h2>
+                <div class="chart-frame"><canvas id="sentiment-chart" aria-label="Sentiment distribution chart" role="img"></canvas></div>
+                <div class="stats-list" aria-label="Sentiment statistics">
+                    <div class="stat-row"><span><i class="fa-solid fa-face-smile" style="color: var(--positive)"></i> Positive</span><span id="positive-percent">0%</span></div>
+                    <div class="stat-row"><span><i class="fa-solid fa-face-frown" style="color: var(--negative)"></i> Negative</span><span id="negative-percent">0%</span></div>
+                    <div class="stat-row"><span><i class="fa-solid fa-face-meh" style="color: var(--neutral)"></i> Neutral</span><span id="neutral-percent">0%</span></div>
+                    <div class="stat-row"><span>Total articles</span><span id="total-articles">0</span></div>
+                </div>
+            </aside>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="site-shell site-footer__inner">
+            <a class="brand" href="index.html"><span class="brand__mark"><i class="fa-solid fa-newspaper"></i></span><span>NEWS ANALYZER</span></a>
+            <p>Live NDTV headlines with sentiment analysis.</p>
+        </div>
+    </footer>
+    <script src="category.js"></script>
+</body>
+</html>

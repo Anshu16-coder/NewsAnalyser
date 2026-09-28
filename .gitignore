@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+env/
+.env
+.env.*
+!.env.example
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Claude Code local settings (machine-specific, not shared)
+.claude/settings.local.json
+
+# Project-specific generated data (these are now DB-backed, not committed)
+*.csv
+*.log
+
+# OS
+Thumbs.db

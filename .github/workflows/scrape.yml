@@ -1,0 +1,59 @@
+name: Daily scrape
+
+# Runs scraper.py against the live NDTV feeds and writes straight to MySQL.
+# Nothing here needs the site to be up — the scraper only talks to the feeds
+# and the database.
+
+on:
+  schedule:
+    # 04:17 UTC daily. Off the hour on purpose: GitHub queues scheduled runs
+    # and :00 is the most contended slot, so a couple of minutes off means
+    # the job starts closer to when you asked for it.
+    - cron: "17 4 * * *"
+  workflow_dispatch: # lets you trigger a run by hand from the Actions tab
+
+concurrency:
+  # Never let two scrapes write at once; a manual re-run cancels the in-flight
+  # job rather than queueing behind it, since each run is idempotent anyway.
+  group: daily-scrape
+  cancel-in-progress: true
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pymysql requests textblob
+
+      - name: Run scraper
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_SSL: ${{ secrets.DB_SSL }}
+        run: python scraper.py 2>&1 | tee scraper.log
+
+      - name: Upload run log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scrape-log-${{ github.run_number }}
+          path: scraper.log
+          if-no-files-found: ignore
+          retention-days: 7

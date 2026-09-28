@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Explore live NDTV headlines by category with article-level sentiment analysis.">
+    <title>News Analyzer | Live NDTV Headlines</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="section-colored">
+    <header class="site-header site-header--home">
+        <div class="site-shell">
+            <div class="topbar">
+                <a class="brand" href="index.html" aria-label="News Analyzer home">
+                    <span class="brand__mark"><i class="fa-solid fa-newspaper"></i></span>
+                    <span>NEWS ANALYZER</span>
+                </a>
+                <a class="topbar__link topbar__link--trends" href="trends.html"><i class="fa-solid fa-chart-line"></i><span>Sentiment trends</span></a>
+            </div>
+            <div class="hero">
+                <p class="eyebrow"><i class="fa-solid fa-sparkles"></i> AI-Powered News Digest</p>
+                <h1>Stay informed, skip the noise.</h1>
+                <p class="hero__text">Thousands of NDTV headlines, distilled to the crux — with the sentiment behind every story made visible.</p>
+                <p class="hero__meta"><i class="fa-regular fa-calendar"></i> <span id="current-date"></span></p>
+            </div>
+        </div>
+    </header>
+
+    <main class="site-shell overlap--home">
+        <section class="pulse-card" aria-labelledby="pulse-heading">
+            <div class="pulse-card__head">
+                <div>
+                    <p class="eyebrow eyebrow--light"><i class="fa-solid fa-bolt"></i> Today's Pulse</p>
+                    <h2 id="pulse-heading">The news in one breath.</h2>
+                </div>
+                <span class="pulse-card__live"><i class="fa-solid fa-circle"></i> Live</span>
+            </div>
+            <div class="pulse-grid">
+                <div class="pulse-tile pulse-tile--positive">
+                    <span class="pulse-tile__icon"><i class="fa-solid fa-face-smile"></i></span>
+                    <span class="pulse-tile__label">Good news</span>
+                    <span class="pulse-tile__value" id="pulse-positive">—</span>
+                </div>
+                <div class="pulse-tile pulse-tile--neutral">
+                    <span class="pulse-tile__icon"><i class="fa-solid fa-circle-info"></i></span>
+                    <span class="pulse-tile__label">Balanced</span>
+                    <span class="pulse-tile__value" id="pulse-neutral">—</span>
+                </div>
+                <div class="pulse-tile pulse-tile--negative">
+                    <span class="pulse-tile__icon"><i class="fa-solid fa-face-frown"></i></span>
+                    <span class="pulse-tile__label">Tension</span>
+                    <span class="pulse-tile__value" id="pulse-negative">—</span>
+                </div>
+                <div class="pulse-tile pulse-tile--total">
+                    <span class="pulse-tile__icon"><i class="fa-solid fa-newspaper"></i></span>
+                    <span class="pulse-tile__label">Headlines today</span>
+                    <span class="pulse-tile__value" id="pulse-total">—</span>
+                </div>
+            </div>
+            <p class="pulse-card__note">Aggregated from the live NDTV feed across all categories. Refreshed every hour.</p>
+        </section>
+
+        <section class="section-heading section-heading--row" aria-labelledby="categories-heading">
+            <div>
+                <h2 id="categories-heading">Explore every beat</h2>
+                <p>Seven live news categories, each with article-level sentiment analysis.</p>
+            </div>
+        </section>
+
+        <section class="category-grid" aria-label="News categories">
+            <a class="category-card category-card--lead" href="general.html">
+                <span class="category-card__icon"><i class="fa-solid fa-newspaper"></i></span>
+                <h3>General</h3>
+                <p>Top stories and breaking developments from India and around the world.</p>
+                <span class="category-card__action">Open live feed <i class="fa-solid fa-arrow-right"></i></span>
+            </a>
+            <a class="category-card" href="cricket.html"><span class="category-card__icon"><i class="fa-solid fa-baseball"></i></span><h3>Cricket</h3><p>Match coverage, player news, and the stories behind the score.</p><span class="category-card__action">Open live feed <i class="fa-solid fa-arrow-right"></i></span></a>
+            <a class="category-card" href="world.html"><span class="category-card__icon"><i class="fa-solid fa-earth-americas"></i></span><h3>World</h3><p>Global affairs, international news, and regional developments.</p><span class="category-card__action">Open live feed <i class="fa-solid fa-arrow-right"></i></span></a>
+            <a class="category-card" href="health.html"><span class="category-card__icon"><i class="fa-solid fa-heart-pulse"></i></span><h3>Health</h3><p>Medical research, public health, and everyday wellbeing.</p><span class="category-card__action">Open live feed <i class="fa-solid fa-arrow-right"></i></span></a>
+            <a class="category-card" href="science.html"><span class="category-card__icon"><i class="fa-solid fa-flask"></i></span><h3>Science</h3><p>Research, discoveries, and the ideas shaping tomorrow.</p><span class="category-card__action">Open live feed <i class="fa-solid fa-arrow-right"></i></span></a>
+            <a class="category-card" href="education.html"><span class="category-card__icon"><i class="fa-solid fa-graduation-cap"></i></span><h3>Education</h3><p>Policy, exams, institutions, and the latest in learning.</p><span class="category-card__action">Open live feed <i class="fa-solid fa-arrow-right"></i></span></a>
+            <a class="category-card" href="entertainment.html"><span class="category-card__icon"><i class="fa-solid fa-film"></i></span><h3>Entertainment</h3><p>Film, television, culture, and the people making headlines.</p><span class="category-card__action">Open live feed <i class="fa-solid fa-arrow-right"></i></span></a>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="site-shell site-footer__inner">
+            <a class="brand" href="index.html"><span class="brand__mark"><i class="fa-solid fa-newspaper"></i></span><span>NEWS ANALYZER</span></a>
+            <p>Live NDTV headlines with sentiment analysis.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('current-date').textContent = new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+        (function () {
+            const API = '/api/allndtv';
+            const tiles = {
+                positive: document.getElementById('pulse-positive'),
+                neutral:  document.getElementById('pulse-neutral'),
+                negative: document.getElementById('pulse-negative'),
+                total:    document.getElementById('pulse-total'),
+            };
+
+            function setTile(el, value) {
+                if (el) el.textContent = value;
+            }
+
+            function classify(analysis) {
+                const a = (analysis || '').trim().toLowerCase();
+                if (a === 'positive') return 'positive';
+                if (a === 'negative') return 'negative';
+                return 'neutral';
+            }
+
+            function fetchPulse() {
+                fetch(API)
+                    .then(r => r.ok ? r.json() : Promise.reject(new Error('API ' + r.status)))
+                    .then(rows => {
+                        if (!Array.isArray(rows)) return;
+                        const counts = { positive: 0, neutral: 0, negative: 0 };
+                        rows.forEach(row => {
+                            counts[classify(row.analysis_result)]++;
+                        });
+                        setTile(tiles.positive, counts.positive);
+                        setTile(tiles.neutral, counts.neutral);
+                        setTile(tiles.negative, counts.negative);
+                        setTile(tiles.total, rows.length);
+                    })
+                    .catch(() => {
+                        setTile(tiles.positive, '—');
+                        setTile(tiles.neutral, '—');
+                        setTile(tiles.negative, '—');
+                        setTile(tiles.total, '—');
+                    });
+            }
+
+            // Refresh every 5 minutes
+            fetchPulse();
+            setInterval(fetchPulse, 300000);
+        })();
+    </script>
+</body>
+</html>

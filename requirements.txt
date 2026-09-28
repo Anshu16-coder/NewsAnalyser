@@ -1,0 +1,8 @@
+flask
+flask_cors
+pandas
+requests
+bs4
+textblob
+pymysql
+python-dotenv
