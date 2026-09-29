@@ -12,6 +12,6 @@ CREATE TABLE IF NOT EXISTS articles (
     UNIQUE (link)
 );
 
-CREATE INDEX idx_articles_category_published ON articles (category, published_on);
-CREATE INDEX idx_articles_published_on ON articles (published_on);
-CREATE INDEX idx_articles_sentiment ON articles (analysis_result);
+CREATE INDEX IF NOT EXISTS idx_articles_category_published ON articles (category, published_on);
+CREATE INDEX IF NOT EXISTS idx_articles_published_on ON articles (published_on);
+CREATE INDEX IF NOT EXISTS idx_articles_sentiment ON articles (analysis_result);
